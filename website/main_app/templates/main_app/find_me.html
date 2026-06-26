@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+{% extends "main_app/common.html" %}
+{% load static %}
+
+<html lang="en">
+{% block content %}
+<body style="background-color:#ECEFF1;">
+<div class="container">
+    <input type="hidden" id="violenceFlag"
+       value="{{ request.session.violence_detected|yesno:'true,false' }}">
+
+
+<script src="https://apis.mapmyindia.com/advancedmaps/v1/oehzgx54nik3ur7upodu32splbu6gxw5/map_load?v=1.5"></script>
+
+<style>
+    #map { width:100%; height:1000px; }
+    .safe-btn { background: green; color: white; }
+    .unsafe-btn { background: red; color: white; }
+</style>
+
+<br><br>
+<h5><strong>Click the button to get your coordinates.</strong></h5>
+
+<button class="btn btn-outline-info" onclick="getLocation()" style="color:white;background:black;">
+    Get Location
+</button><br><br>
+
+<button class="btn safe-btn" onclick="showSafeAreas()">Show Safe Areas</button>
+<button class="btn unsafe-btn" onclick="showUnsafeAreas()">Show Unsafe Areas</button>
+<button class="btn btn-dark" onclick="clearAreas()">Clear Areas</button>
+
+<p id="demo"></p>
+<div id="map"></div>
+
+<script>
+var x = document.getElementById("demo");
+var unsafeLayer = L.layerGroup();
+var safeLayer = L.layerGroup();
+
+var apikey = 'd25ac72e7a1e43b8a2d3c939895889d1';
+var api_url = 'https://api.opencagedata.com/geocode/v1/json';
+
+var userIcon = L.icon({
+    iconUrl: "https://maps.mapmyindia.com/images/2.png",
+    iconSize: [25,25]
+});
+
+var safeIcon = L.icon({
+    iconUrl: "https://cdn-icons-png.flaticon.com/512/190/190411.png",
+    iconSize: [25,25]
+});
+
+var unsafeIcon = L.icon({
+    iconUrl: "https://cdn-icons-png.flaticon.com/512/564/564619.png",
+    iconSize: [25,25]
+});
+
+/* SAFE & UNSAFE DATA */
+var safeAreas = [
+    {name:"RS Puram", lat:11.0086, lng:76.9526},
+    {name:"Gandhipuram", lat:11.0183, lng:76.9674},
+    {name:"Peelamedu", lat:11.0301, lng:77.0433},
+    { name:"Erode Bus Stand", lat:11.3410, lng:77.7172 },
+];
+
+var unsafeAreas = [
+    
+    { name:"Brough Road", lat:11.3390, lng:77.7205 },
+    { name:"Surampatti", lat:11.3284, lng:77.7282 }
+];
+
+/* MAIN FUNCTION */
+function showPosition(position) {
+
+var lat = position.coords.latitude;
+var lng = position.coords.longitude;
+
+var areaStatus = "✅ SAFE AREA";
+var nearbyUnsafe = "No unsafe areas nearby";
+
+for (let p of unsafeAreas) {
+    let dist = getDistance(lat, lng, p.lat, p.lng);
+    if (dist < 1) {
+        areaStatus = "⚠️ UNSAFE AREA";
+        nearbyUnsafe = p.name;
+        alert("🚨 WARNING: You are near unsafe area: " + p.name);
+        break;
+    }
+}
+
+/* 🔥 PRINT IMMEDIATELY (NO FETCH DEPENDENCY) */
+x.innerHTML = `
+    <hr>
+    <h6><b> Current Location Details</b></h6>
+    <b>Latitude:</b> ${lat}<br>
+    <b>Longitude:</b> ${lng}<br>
+    <b>Status:</b>
+    <span style="color:${areaStatus.includes('UNSAFE')?'red':'green'};font-weight:bold;">
+        ${areaStatus}
+    </span><br>
+    <b>Nearby Unsafe Area:</b>
+    <span style="color:red;font-weight:bold;">
+        ${nearbyUnsafe}
+    </span><br>
+   
+`;
+
+/* OPTIONAL: TRY FETCH (WILL FAIL ON HTTP – SAFE HANDLED) */
+fetch(api_url + '?key=' + apikey + '&q=' + lat + ',' + lng)
+.then(res => res.json())
+.then(data => {
+    let areaName = data.results[0].formatted;
+    x.innerHTML += `<br><b>Location Name:</b> ${areaName}`;
+})
+.catch(err => {
+    console.warn("Location name blocked by browser security");
+});
+
+map = new MapmyIndia.Map("map", {
+    center:[lat,lng],
+    zoom:14,
+    hybrid:true
+});
+
+L.marker([lat,lng],{icon:userIcon})
+    .bindPopup(areaStatus)
+    .addTo(map);
+}
+
+
+
+/* BUTTON FUNCTIONS */
+function showSafeAreas(){
+    safeLayer.clearLayers();
+    safeAreas.forEach(p=>{
+        L.marker([p.lat,p.lng],{icon:safeIcon})
+        .bindPopup("✅ Safe Area<br>"+p.name)
+        .addTo(safeLayer);
+    });
+    map.addLayer(safeLayer);
+}
+
+function showUnsafeAreas(){
+    unsafeLayer.clearLayers();
+    unsafeAreas.forEach(p=>{
+        L.marker([p.lat,p.lng],{icon:unsafeIcon})
+        .bindPopup("⚠ Unsafe Area<br>"+p.name)
+        .addTo(unsafeLayer);
+    });
+    map.addLayer(unsafeLayer);
+}
+
+function clearAreas(){
+    map.removeLayer(safeLayer);
+    map.removeLayer(unsafeLayer);
+}
+
+function getDistance(lat1,lon1,lat2,lon2){
+    var R=6371;
+    var dLat=(lat2-lat1)*Math.PI/180;
+    var dLon=(lon2-lon1)*Math.PI/180;
+    var a=Math.sin(dLat/2)**2 +
+          Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+          Math.sin(dLon/2)**2;
+    return R*(2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)));
+}
+
+function getLocation(){
+    navigator.geolocation.getCurrentPosition(showPosition);
+}
+document.addEventListener("DOMContentLoaded", function () {
+
+const violenceDetected =
+    document.getElementById("violenceFlag")?.value === "true";
+
+if (violenceDetected) {
+
+    navigator.geolocation.getCurrentPosition(function(position){
+
+        fetch("/send-location/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            console.log("🚨 Admin alerted automatically");
+        });
+
+    });
+
+}
+});
+
+</script>
+
+</div>
+</body>
+{% endblock %}
+</html>

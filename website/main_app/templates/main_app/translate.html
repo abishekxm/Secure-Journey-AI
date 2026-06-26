@@ -1,0 +1,74 @@
+{% extends "main_app/common.html" %}
+{% load static %}
+
+{% block content %}
+<body style="background-color:#ECEFF1;">
+<div class="container">
+
+<style>
+    .translate-box {
+        background: white;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        max-width: 700px;
+        margin: auto;
+    }
+</style>
+
+<br><br>
+
+<h4><strong>Language Translator</strong></h4>
+<p>Translate text between multiple languages.</p>
+
+<div class="translate-box">
+
+<form method="POST">
+{% csrf_token %}
+
+<div class="form-group">
+    <label><b>Enter Text</b></label>
+    <textarea name="text"
+              class="form-control"
+              rows="4"
+              required></textarea>
+</div>
+
+<div class="form-group">
+    <label><b>From</b></label>
+    <select name="src_lang" class="form-control">
+        {% for code,name in languages.items %}
+            <option value="{{code}}">{{name}}</option>
+        {% endfor %}
+    </select>
+</div>
+
+<div class="form-group">
+    <label><b>To</b></label>
+    <select name="dest_lang" class="form-control">
+        {% for code,name in languages.items %}
+            <option value="{{code}}">{{name}}</option>
+        {% endfor %}
+    </select>
+</div>
+
+<br>
+
+<button type="submit"
+        class="btn btn-danger btn-block">
+    Translate
+</button>
+
+</form>
+
+{% if translated_text %}
+<hr>
+<h6><b>Translated Output:</b></h6>
+<p>{{ translated_text }}</p>
+{% endif %}
+
+</div>
+
+</div>
+</body>
+{% endblock %}

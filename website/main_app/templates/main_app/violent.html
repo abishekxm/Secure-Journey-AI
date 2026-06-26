@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+{% extends "main_app/common.html" %}
+{% load static %}
+
+<html lang="en">
+{% block content %}
+<body style="background-color:#ECEFF1;">
+<div class="container">
+
+<style>
+    .upload-box {
+        background: white;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        max-width: 600px;
+        margin: auto;
+    }
+
+    .danger-text {
+        color: red;
+        font-weight: bold;
+    }
+
+    .success-text {
+        color: green;
+        font-weight: bold;
+    }
+</style>
+
+<br><br>
+
+<h4><strong>Violence Detection (Video Upload)</strong></h4>
+<p>Upload any video to detect violent activity.</p>
+
+<div class="upload-box">
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label><b>Select Video File</b></label>
+            <input type="file"
+                   name="video"
+                   class="form-control"
+                   accept="video/*"
+                   required>
+        </div>
+
+        <br>
+
+        <button type="submit"
+                class="btn btn-danger btn-block">
+            Upload & Detect Violence
+        </button>
+    </form>
+
+    <br>
+
+    {% if message %}
+        <p class="danger-text">{{ message }}</p>
+    {% endif %}
+
+    {% for msg in messages %}
+        <p class="{% if msg.tags == 'error' %}danger-text{% else %}success-text{% endif %}">
+            {{ msg }}
+        </p>
+    {% endfor %}
+
+</div>
+
+<br><br>
+
+<hr>
+
+<h6><b>How it works:</b></h6>
+<ul>
+    <li>Upload any recorded video</li>
+    <li>AI scans each frame using YOLO</li>
+    <li>If violence is detected → redirected to Live Location</li>
+    <li>Emergency emails sent automatically</li>
+</ul>
+
+</div>
+</body>
+{% endblock %}
+</html>

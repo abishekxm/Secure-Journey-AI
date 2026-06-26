@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+{% extends "main_app/common.html" %}
+{% load static %}
+
+<html lang="en">
+{% block content %}
+<body>
+
+    <h2>🔴 Live Camera Violence Detection</h2>
+    
+    <video id="video" autoplay muted></video>
+    <canvas id="canvas"></canvas>
+    <br>
+    <img id="output">
+    
+    <div id="status" style="color: green;">No Violence Detected</div>
+    
+    <script>
+        const video = document.getElementById("video");
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        const output = document.getElementById("output");
+        const statusText = document.getElementById("status");
+    
+        let sending = false;
+    
+        // ✅ Prevent sending 100 emails
+        let emailSent = false;
+    
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            });
+    
+            async function sendLocationToServer() {
+    if (emailSent) return;
+
+    if (!navigator.geolocation) {
+        console.log("Geolocation not supported");
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+
+        try {
+            const res = await fetch("/send_location/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ lat: lat, lng: lng })
+            });
+
+            const result = await res.json();
+            console.log("Send location result:", result);
+
+            // ✅ Only stop when success
+            if (result.status === "success") {
+                emailSent = true;
+            }
+
+        } catch (err) {
+            console.error("send_location error:", err);
+        }
+    });
+}
+    
+        async function sendFrame() {
+            if (sending) return;
+            sending = true;
+    
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+    
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+            const frame = canvas.toDataURL("image/jpeg");
+    
+            try {
+                const response = await fetch("/live-detect/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",   // ✅ IMPORTANT FOR SESSION
+                    body: JSON.stringify({ frame: frame })
+                });
+    
+                const data = await response.json();
+    
+                output.src = "data:image/jpeg;base64," + data.frame;
+    
+                if (data.violence_detected) {
+                    statusText.innerText = "⚠ VIOLENCE DETECTED";
+                    statusText.style.color = "red";
+    
+                    // ✅ Trigger location + email sending ONCE
+                    await sendLocationToServer();
+    
+                } else {
+                    statusText.innerText = "No Violence Detected";
+                    statusText.style.color = "green";
+                }
+    
+            } catch (err) {
+                console.error("live-detect error:", err);
+            }
+    
+            sending = false;
+        }
+    
+        setInterval(sendFrame, 1200);  // ✅ Safe FPS
+    </script>
+    
+    </body>
+{% endblock %}
+</html>

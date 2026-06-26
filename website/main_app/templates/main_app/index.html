@@ -1,0 +1,71 @@
+{% extends "main_app/common.html" %}
+{% load static %}
+
+{% block content %}
+<body style="background-color:#ECEFF1;">
+<div class="container">
+
+<style>
+    .travel-box {
+        background: white;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        max-width: 700px;
+        margin: auto;
+    }
+</style>
+
+<br><br>
+
+<h4><strong>Travel Itinerary Generator</strong></h4>
+<p>Enter your travel details to generate itinerary with weather insights.</p>
+
+<div class="travel-box">
+
+<form method="POST">
+    {% csrf_token %}
+
+    <div class="form-group">
+        <label><b>From</b></label>
+        <input type="text" name="source"
+               class="form-control"
+               placeholder="City, State, Country"
+               required>
+    </div>
+
+    <div class="form-group">
+        <label><b>Destination</b></label>
+        <input type="text" name="destination"
+               class="form-control"
+               required>
+    </div>
+
+    <div class="form-group">
+        <label><b>Travel Date</b></label>
+        <input type="date" name="date"
+               class="form-control"
+               required>
+    </div>
+
+    <div class="form-group">
+        <label><b>Return Date</b></label>
+        <input type="date" name="return"
+               class="form-control"
+               required>
+    </div>
+
+    <br>
+
+    <button type="submit"
+            class="btn btn-danger btn-block">
+        Generate Itinerary
+    </button>
+
+</form>
+
+</div>
+
+</div>
+</body>
+{% endblock %}
