@@ -21,7 +21,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = '&r!u1@u2dd0ult3&*!^=&m4tu(1aylu*k6)p#t4cm(owu0vt_h'
-
+import os
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
@@ -121,10 +121,13 @@ LOGOUT_REDIRECT_URL = 'home/'
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = "/static/"
+
 STATICFILES_DIRS = (
-    os.path.join(BASE_DIR+"/main_app/", 'static'),
+    os.path.join(BASE_DIR, "main_app", "static"),
 )
-import os
+
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
